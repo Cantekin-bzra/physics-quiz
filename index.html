@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Force &amp; Motion — Physics Revision Quiz</title>
+<meta name="description" content="An interactive revision quiz on mechanics for the Physics final exam. Every wrong answer is explained with a short video.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN TOKENS
+   The four accent colours are the force colours used in our
+   physics notes, so the colour of an arrow always means the
+   same thing: normal force, weight, friction, applied force.
+   ============================================================ */
+:root{
+  --paper:      #EDF0F3;   /* cool squared paper */
+  --card:       #FFFFFF;
+  --grid:       #E3E8ED;   /* faint grid line */
+  --grid-major: #D5DEE6;
+  --ink:        #111A23;
+  --ink-soft:   #4C5D6D;
+  --ink-faint:  #8496A6;
+  --rule:       #DCE3EA;
+
+  --normal:   #14956B;   /* normal force  – green   – also "correct" */
+  --weight:   #D62F6B;   /* weight        – magenta – also "wrong"   */
+  --friction: #2A63D0;   /* friction      – blue    – also "focus"   */
+  --applied:  #D98A0B;   /* applied force – amber                    */
+
+  --shadow: 0 1px 2px rgba(17,26,35,.06), 0 8px 24px -12px rgba(17,26,35,.18);
+  --radius: 4px;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  font-family:"IBM Plex Sans",system-ui,sans-serif;
+  font-size:17px;
+  line-height:1.6;
+  color:var(--ink);
+  background-color:var(--paper);
+  /* squared paper: fine 24px grid with a heavier line every 120px */
+  background-image:
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:120px 120px,120px 120px,24px 24px,24px 24px;
+}
+
+.wrap{max-width:740px;margin:0 auto;padding:32px 20px 80px}
+
+/* ---------- typography ---------- */
+h1,h2,h3{font-family:Archivo,sans-serif;font-weight:800;letter-spacing:-.02em;line-height:1.12;margin:0}
+h1{font-size:clamp(2.1rem,7vw,3.1rem)}
+h2{font-size:1.5rem}
+h3{font-size:1.05rem;font-weight:600}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);
+}
+.lead{font-size:1.06rem;color:var(--ink-soft)}
+.mono{font-family:"IBM Plex Mono",monospace}
+em.term{font-style:normal;border-bottom:1.5px dotted var(--ink-faint)}
+
+/* ---------- shared card ---------- */
+.card{
+  background:var(--card);border:1px solid var(--rule);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:28px;
+}
+
+/* ---------- masthead ---------- */
+.masthead{margin-bottom:28px}
+.masthead h1{margin:10px 0 14px}
+.byline{
+  font-family:"IBM Plex Mono",monospace;font-size:.8rem;color:var(--ink-faint);
+  border-top:1px solid var(--rule);padding-top:12px;margin-top:22px;
+}
+
+/* ---------- the signature element: the vector progress rail ----------
+   One arrow that grows across six ticks. Each tick takes the colour of
+   the answer given, so the rail doubles as a score summary.          */
+.rail{margin:0 0 24px;padding:14px 4px 6px}
+.rail svg{display:block;width:100%;height:46px;overflow:visible}
+.rail .shaft{stroke:var(--ink);stroke-width:2.5;transition:all .45s cubic-bezier(.4,0,.2,1)}
+.rail .head{fill:var(--ink);transition:transform .45s cubic-bezier(.4,0,.2,1)}
+.rail .tick{stroke:var(--ink-faint);stroke-width:1.5}
+.rail .dot{fill:var(--paper);stroke:var(--ink-faint);stroke-width:1.5;transition:fill .3s}
+.rail .dot.ok{fill:var(--normal);stroke:var(--normal)}
+.rail .dot.no{fill:var(--weight);stroke:var(--weight)}
+.rail .lbl{font-family:"IBM Plex Mono",monospace;font-size:9px;fill:var(--ink-faint)}
+
+/* ---------- situation sketch ---------- */
+.sketch{
+  background:#FAFCFD;border:1px solid var(--rule);border-radius:var(--radius);
+  padding:10px;margin-bottom:22px;
+}
+.sketch svg{display:block;width:100%;height:auto;max-height:210px}
+.sketch text{font-family:"IBM Plex Mono",monospace;font-size:11px}
+
+/* ---------- question ---------- */
+.qhead{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:14px}
+.qtext{font-size:1.16rem;font-weight:600;margin:0 0 6px}
+.qgiven{font-family:"IBM Plex Mono",monospace;font-size:.86rem;color:var(--ink-soft);margin:0 0 20px;white-space:pre-wrap}
+
+.options{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.opt{
+  display:flex;gap:14px;align-items:flex-start;width:100%;text-align:left;
+  font:inherit;color:inherit;cursor:pointer;
+  background:var(--card);border:1.5px solid var(--rule);border-radius:var(--radius);
+  padding:14px 16px;transition:border-color .15s,background .15s,transform .15s;
+}
+.opt:hover:not(:disabled){border-color:var(--friction);background:#F7FAFF}
+.opt:focus-visible{outline:3px solid var(--friction);outline-offset:2px}
+.opt:disabled{cursor:default}
+.opt .key{
+  font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.85rem;
+  color:var(--ink-faint);flex:0 0 auto;padding-top:2px;
+}
+.opt.correct{border-color:var(--normal);background:#EFFAF5}
+.opt.correct .key{color:var(--normal)}
+.opt.chosen-wrong{border-color:var(--weight);background:#FDF0F5}
+.opt.chosen-wrong .key{color:var(--weight)}
+.opt.dim{opacity:.5}
+
+/* ---------- feedback ---------- */
+.fb{margin-top:24px;border-top:2px solid var(--ink);padding-top:20px}
+.fb[hidden]{display:none}
+.verdict{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.verdict .mark{
+  font-family:Archivo,sans-serif;font-weight:800;font-size:.78rem;letter-spacing:.1em;
+  text-transform:uppercase;padding:3px 9px;border-radius:2px;color:#fff;
+}
+.fb.ok .mark{background:var(--normal)}
+.fb.no .mark{background:var(--weight)}
+.fb.ok{border-top-color:var(--normal)}
+.fb.no{border-top-color:var(--weight)}
+.misname{font-family:Archivo,sans-serif;font-weight:600;font-size:1.02rem}
+.fb p{margin:0 0 14px}
+
+.video{margin:18px 0}
+.video .frame{background:#0B1117;border-radius:var(--radius);overflow:hidden;line-height:0}
+.video .frame video{display:block;width:100%;height:auto;background:#0B1117}
+.video .pending{
+  display:flex;align-items:center;gap:10px;padding:12px 16px;
+  border:1.5px dashed var(--grid-major);border-radius:var(--radius);background:#F6F8FA;
+  color:var(--ink-faint);font-family:"IBM Plex Mono",monospace;font-size:.78rem;
+}
+.video .pending .badge{
+  color:var(--applied);font-weight:600;letter-spacing:.08em;
+}
+.video .pending[hidden]{display:none}
+.transcript{
+  border-left:3px solid var(--rule);padding:2px 0 2px 16px;margin-top:14px;
+  color:var(--ink-soft);font-size:.96rem;
+}
+.transcript strong{color:var(--ink);font-weight:600}
+
+/* ---------- buttons ---------- */
+.btn{
+  font-family:Archivo,sans-serif;font-weight:600;font-size:.95rem;
+  background:var(--ink);color:#fff;border:1.5px solid var(--ink);
+  padding:12px 22px;border-radius:var(--radius);cursor:pointer;
+  transition:background .15s,transform .1s;
+}
+.btn:hover{background:#28384a}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:3px solid var(--friction);outline-offset:2px}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:#E3E9EF}
+.btn-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px}
+
+/* ---------- results ---------- */
+.score{display:flex;align-items:baseline;gap:14px;margin:6px 0 4px}
+.score .num{font-family:Archivo,sans-serif;font-weight:800;font-size:4.2rem;line-height:1;letter-spacing:-.04em}
+.score .den{font-family:"IBM Plex Mono",monospace;font-size:1.1rem;color:var(--ink-faint)}
+.breakdown{list-style:none;padding:0;margin:22px 0 0;border-top:1px solid var(--rule)}
+.breakdown li{
+  display:flex;gap:14px;align-items:baseline;
+  padding:11px 0;border-bottom:1px solid var(--rule);
+}
+.breakdown .st{font-family:"IBM Plex Mono",monospace;font-size:.78rem;font-weight:600;flex:0 0 68px}
+.breakdown .st.ok{color:var(--normal)}
+.breakdown .st.no{color:var(--weight)}
+.breakdown .tp{font-weight:600}
+.breakdown .hint{display:block;font-weight:400;font-size:.92rem;color:var(--ink-soft)}
+
+/* ---------- reference sections ---------- */
+.ref{margin-top:34px}
+details.ref-box{
+  background:var(--card);border:1px solid var(--rule);border-radius:var(--radius);
+  padding:0;margin-bottom:12px;box-shadow:var(--shadow);
+}
+details.ref-box summary{
+  cursor:pointer;padding:16px 20px;font-family:Archivo,sans-serif;font-weight:600;
+  list-style:none;display:flex;justify-content:space-between;align-items:center;
+}
+details.ref-box summary::-webkit-details-marker{display:none}
+details.ref-box summary::after{content:"+";font-family:"IBM Plex Mono",monospace;color:var(--ink-faint)}
+details.ref-box[open] summary::after{content:"–"}
+details.ref-box summary:focus-visible{outline:3px solid var(--friction);outline-offset:-3px}
+.ref-body{padding:0 20px 20px;font-size:.95rem}
+.gloss{width:100%;border-collapse:collapse}
+.gloss td{padding:7px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+.gloss td:first-child{width:48%;padding-right:14px;color:var(--ink-soft)}
+.gloss td:last-child{font-weight:600}
+.srclist{margin:0;padding-left:20px}
+.srclist li{margin-bottom:9px}
+.todo{
+  font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--applied);
+  background:#FFF8EA;border:1px solid #F0DCB4;padding:1px 6px;border-radius:2px;
+}
+
+footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--rule);
+  font-family:"IBM Plex Mono",monospace;font-size:.76rem;color:var(--ink-faint)}
+
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+@media (max-width:520px){
+  body{font-size:16px}
+  .wrap{padding:20px 14px 60px}
+  .card{padding:20px}
+  .score .num{font-size:3.2rem}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ==================== MASTHEAD ==================== -->
+<header class="masthead" id="masthead">
+  <p class="eyebrow">Physics · Mechanics · Final exam revision</p>
+  <h1>Force &amp; Motion</h1>
+  <p class="lead">Six questions on the mechanics we covered this year. Every wrong answer is a
+  misconception that students really hold — and each one gets a short video explaining why it fails.</p>
+  <p class="byline">Kenan Cantekin &amp; Samuel P. · Class IMST24a · IDAF Natural Sciences &amp; English</p>
+</header>
+
+<!-- ==================== PROGRESS RAIL ==================== -->
+<div class="rail" id="rail" hidden>
+  <svg viewBox="0 0 600 46" role="img" aria-labelledby="railLabel">
+    <title id="railLabel">Progress through the quiz</title>
+    <line x1="10" y1="24" x2="560" y2="24" stroke="#C3CFDA" stroke-width="1.5"/>
+    <line class="shaft" id="railShaft" x1="10" y1="24" x2="10" y2="24"/>
+    <polygon class="head" id="railHead" points="0,-6 12,0 0,6" transform="translate(10,24)"/>
+    <g id="railTicks"></g>
+  </svg>
+</div>
+
+<!-- ==================== START SCREEN ==================== -->
+<section class="card" id="startScreen">
+  <h2>Before you start</h2>
+  <p class="lead" style="margin-top:10px">
+    This quiz is built around <em class="term">misconceptions</em>, not arithmetic. Each wrong option is a
+    specific way of thinking that feels right but breaks down. If you pick one, you will see exactly
+    where the reasoning goes wrong.
+  </p>
+  <ul style="color:var(--ink-soft);padding-left:20px">
+    <li>Six questions, one from each topic of the course</li>
+    <li>Immediate feedback after every answer</li>
+    <li>A short explanatory video for each wrong option</li>
+    <li>A personal review list at the end</li>
+  </ul>
+  <p class="mono" style="font-size:.85rem;color:var(--ink-faint)">
+    Use g = 9.81 m/s². Air resistance is neglected unless stated.
+  </p>
+  <div class="btn-row"><button class="btn" id="startBtn">Start the quiz</button></div>
+</section>
+
+<!-- ==================== QUESTION SCREEN ==================== -->
+<section class="card" id="quizScreen" hidden>
+  <div class="qhead">
+    <p class="eyebrow" id="qTopic">Topic</p>
+    <p class="eyebrow mono" id="qCount">1 / 6</p>
+  </div>
+  <div class="sketch" id="qSketch"></div>
+  <p class="qtext" id="qText"></p>
+  <p class="qgiven" id="qGiven"></p>
+  <ul class="options" id="qOptions"></ul>
+
+  <div class="fb" id="feedback" hidden>
+    <div class="verdict">
+      <span class="mark" id="fbMark"></span>
+      <span class="misname" id="fbName"></span>
+    </div>
+    <p id="fbText"></p>
+    <div class="video" id="fbVideo"></div>
+    <div class="btn-row"><button class="btn" id="nextBtn">Continue</button></div>
+  </div>
+</section>
+
+<!-- ==================== RESULT SCREEN ==================== -->
+<section class="card" id="resultScreen" hidden>
+  <p class="eyebrow">Your result</p>
+  <div class="score"><span class="num" id="scoreNum">0</span><span class="den">/ 6 correct</span></div>
+  <p class="lead" id="scoreMsg"></p>
+  <h3 style="margin-top:26px">What to revise</h3>
+  <ul class="breakdown" id="breakdown"></ul>
+  <div class="btn-row" style="margin-top:24px">
+    <button class="btn" id="againBtn">Try again</button>
+    <button class="btn ghost" id="reviewBtn">Read all explanations</button>
+  </div>
+</section>
+
+<!-- ==================== REFERENCE ==================== -->
+<div class="ref">
+  <details class="ref-box">
+    <summary>Glossary — German to English</summary>
+    <div class="ref-body">
+      <p style="color:var(--ink-soft);margin-top:0">Our lessons are in German and this quiz is in English.
+      These are the terms you need to recognise in both languages.</p>
+      <table class="gloss">
+        <tr><td>gleichförmige Bewegung</td><td>uniform motion</td></tr>
+        <tr><td>gleichmässig beschleunigte Bewegung</td><td>uniformly accelerated motion</td></tr>
+        <tr><td>freier Fall</td><td>free fall</td></tr>
+        <tr><td>senkrechter Wurf nach oben</td><td>vertical throw upwards</td></tr>
+        <tr><td>waagerechter Wurf</td><td>horizontal projectile motion</td></tr>
+        <tr><td>schiefer Wurf</td><td>projectile motion at an angle</td></tr>
+        <tr><td>resultierende Kraft</td><td>resultant force / net force</td></tr>
+        <tr><td>Gewichtskraft</td><td>weight</td></tr>
+        <tr><td>Normalkraft</td><td>normal force</td></tr>
+        <tr><td>Reibungskraft</td><td>friction force</td></tr>
+        <tr><td>schiefe Ebene</td><td>inclined plane</td></tr>
+        <tr><td>gleichförmige Kreisbewegung</td><td>uniform circular motion</td></tr>
+        <tr><td>Zentripetalkraft</td><td>centripetal force</td></tr>
+        <tr><td>Periode / Frequenz</td><td>period / frequency</td></tr>
+        <tr><td>Hubarbeit</td><td>lifting work</td></tr>
+        <tr><td>Beschleunigungsarbeit</td><td>accelerating work</td></tr>
+        <tr><td>Reibungsarbeit</td><td>work done against friction</td></tr>
+        <tr><td>Energieerhaltungssatz</td><td>law of conservation of energy</td></tr>
+        <tr><td>Leistung</td><td>power</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details class="ref-box">
+    <summary>Sources</summary>
+    <div class="ref-body">
+      <ul class="srclist">
+        <li><strong>Class notes, Physics, class IMST24a.</strong> OneNote course notebook,
+        lessons from 11 August 2025 to 14 August 2026, covering one-dimensional motion,
+        free fall and projectile motion, forces and statics, dynamics and the inclined plane,
+        uniform circular motion, and work, energy and power. Every physical relationship used
+        in this quiz is taken from these lessons.</li>
+
+        <li><strong>DPK Deutschschweizerische Physikkommission; Cappelli, B.; Felder, B.;
+        Grentz, W.; Mohr, M.; Prim, C.; von Salis, R.; Seipel, O.; von Weymarn, C.:</strong>
+        <em>Physik anwenden und verstehen. Aufgaben für die Sekundarstufe II.</em>
+        Orell Füssli Verlag, Zürich, 8th edition 2021. ISBN 978-3-280-04010-2. The exercises
+        worked through in class, referenced in our notes as page and exercise numbers
+        (for example S. 79, A245).</li>
+
+        <li><strong>DMK, DPK and DCK (eds.):</strong> <em>Formeln, Tabellen, Begriffe.
+        Mathematik – Physik – Chemie.</em> Orell Füssli Verlag, Zürich, 7th edition.
+        The formulary permitted in our written examinations; source of the value
+        g = 9.81 m/s² used throughout this quiz.</li>
+
+        <li><strong>Explanatory videos.</strong> The eighteen scripts were written by
+        Kenan Cantekin and Samuel P. The spoken narration was recorded by both authors,
+        who each take one half of every clip. The animated whiteboard visuals were generated
+        with an AI image and video tool from prompts written by the authors, and every clip
+        was checked by the authors for scientific accuracy before publication.</li>
+
+        <li><strong>Situation sketches.</strong> Drawn by the authors as SVG graphics,
+        following the diagram conventions used in our physics lessons, including the colour
+        code for forces.</li>
+
+        <li><strong>Typefaces.</strong> Archivo and IBM Plex, from Google Fonts, both under
+        the SIL Open Font License.</li>
+      </ul>
+    </div>
+  </details>
+</div>
+
+<footer>
+  Built for the IDAF Natural Sciences &amp; English project · Submission 18 September 2026
+</footer>
+</div>
+
+<script>
+/* ============================================================
+   1. VIDEO CONFIGURATION
+   ------------------------------------------------------------
+   The explanation clips live in the videos/ folder of this
+   repository, one file per wrong answer, named after its slot:
+   videos/q1b.mp4, videos/q1c.mp4 and so on. The still image
+   shown before playback is posters/q1b.jpg.
+
+   To replace a clip, overwrite the file of the same name. No
+   code needs changing. If a file is missing, the page falls
+   back to the written explanation, so the quiz never breaks.
+   ============================================================ */
+const VIDEO_DIR  = "videos";
+const POSTER_DIR = "posters";
+
+/* ============================================================
+   2. SITUATION SKETCHES
+   Colour code, same as in our notes:
+   green = normal force, magenta = weight,
+   blue = friction/velocity, amber = applied force
+   ============================================================ */
+const C = {n:"#14956B", w:"#D62F6B", f:"#2A63D0", a:"#D98A0B", ink:"#111A23", faint:"#8496A6"};
+
+const SKETCH = {
+  /* v-t diagram, line in the negative region getting steeper */
+  q1:`<svg viewBox="0 0 420 180" xmlns="http://www.w3.org/2000/svg">
+    <line x1="62" y1="58" x2="392" y2="58" stroke="${C.ink}" stroke-width="1.5"/>
+    <line x1="62" y1="22" x2="62" y2="158" stroke="${C.ink}" stroke-width="1.5"/>
+    <polygon points="400,58 389,53 389,63" fill="${C.ink}"/>
+    <polygon points="62,14 57,25 67,25" fill="${C.ink}"/>
+    <text x="374" y="76" fill="${C.ink}">t / s</text>
+    <text x="72" y="20" fill="${C.ink}">v / (m/s)</text>
+    <line x1="62" y1="80" x2="352" y2="148" stroke="${C.f}" stroke-width="2.5"/>
+    <circle cx="62" cy="80" r="3.5" fill="${C.f}"/>
+    <line x1="56" y1="80" x2="68" y2="80" stroke="${C.f}" stroke-width="1.5"/>
+    <text x="30" y="84" fill="${C.f}">-8</text>
+    <text x="260" y="120" fill="${C.f}">tram</text>
+    <text x="62" y="174" fill="${C.faint}">the velocity is negative and becomes more negative</text>
+  </svg>`,
+
+  /* ball thrown up, apex marked */
+  q2:`<svg viewBox="0 0 420 180" xmlns="http://www.w3.org/2000/svg">
+    <line x1="30" y1="158" x2="390" y2="158" stroke="${C.ink}" stroke-width="1.5"/>
+    <path d="M70,158 Q210,-10 350,158" fill="none" stroke="${C.faint}" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <circle cx="210" cy="74" r="7" fill="${C.ink}"/>
+    <text x="224" y="70" fill="${C.ink}">highest point</text>
+    <line x1="210" y1="87" x2="210" y2="122" stroke="${C.w}" stroke-width="2.5"/>
+    <polygon points="210,130 205,119 215,119" fill="${C.w}"/>
+    <text x="218" y="116" fill="${C.w}">F_G</text>
+    <line x1="70" y1="150" x2="70" y2="112" stroke="${C.f}" stroke-width="2.5"/>
+    <polygon points="70,104 65,115 75,115" fill="${C.f}"/>
+    <text x="30" y="124" fill="${C.f}">v0</text>
+    <text x="60" y="176" fill="${C.faint}">thrown straight up, air resistance neglected</text>
+  </svg>`,
+
+  /* block on a 30 degree ramp with weight and normal force */
+  q3:`<svg viewBox="0 0 420 190" xmlns="http://www.w3.org/2000/svg">
+    <path d="M50,170 L300,170 L300,26 Z" fill="#F2F6F9" stroke="${C.ink}" stroke-width="1.5"/>
+    <path d="M110,170 A60,60 0 0,0 102,140" fill="none" stroke="${C.faint}" stroke-width="1.2"/>
+    <text x="114" y="160" fill="${C.faint}">30°</text>
+    <g transform="translate(175,98) rotate(-30)">
+      <rect x="-20" y="-13" width="40" height="26" fill="#fff" stroke="${C.ink}" stroke-width="1.5"/>
+      <line x1="0" y1="-13" x2="0" y2="-56" stroke="${C.n}" stroke-width="2.5"/>
+      <polygon points="0,-64 -5,-53 5,-53" fill="${C.n}"/>
+    </g>
+    <text x="152" y="30" fill="${C.n}">F_N</text>
+    <line x1="175" y1="98" x2="175" y2="142" stroke="${C.w}" stroke-width="2.5"/>
+    <polygon points="175,150 170,139 180,139" fill="${C.w}"/>
+    <text x="183" y="142" fill="${C.w}">F_G</text>
+    <text x="60" y="186" fill="${C.faint}">m = 5.0 kg, at rest on the ramp</text>
+  </svg>`,
+
+  /* lorry at constant speed, drive and resistance */
+  q4:`<svg viewBox="0 0 420 180" xmlns="http://www.w3.org/2000/svg">
+    <line x1="20" y1="140" x2="400" y2="140" stroke="${C.ink}" stroke-width="1.5"/>
+    <rect x="150" y="82" width="120" height="42" fill="#fff" stroke="${C.ink}" stroke-width="1.5"/>
+    <path d="M270,124 L270,98 L300,98 L312,124 Z" fill="#fff" stroke="${C.ink}" stroke-width="1.5"/>
+    <circle cx="180" cy="130" r="10" fill="#fff" stroke="${C.ink}" stroke-width="1.5"/>
+    <circle cx="288" cy="130" r="10" fill="#fff" stroke="${C.ink}" stroke-width="1.5"/>
+    <line x1="312" y1="70" x2="372" y2="70" stroke="${C.a}" stroke-width="2.5"/>
+    <polygon points="380,70 369,65 369,75" fill="${C.a}"/>
+    <text x="322" y="62" fill="${C.a}">F_drive = 2400 N</text>
+    <line x1="148" y1="70" x2="88" y2="70" stroke="${C.f}" stroke-width="2.5"/>
+    <polygon points="80,70 91,65 91,75" fill="${C.f}"/>
+    <text x="60" y="62" fill="${C.f}">resistance</text>
+    <text x="150" y="172" fill="${C.faint}">constant speed 60 km/h, flat road</text>
+  </svg>`,
+
+  /* ball on a string, tangent shown dashed */
+  q5:`<svg viewBox="0 0 420 188" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="200" cy="105" r="62" fill="none" stroke="${C.faint}" stroke-width="1.5" stroke-dasharray="4 5"/>
+    <circle cx="200" cy="105" r="3.5" fill="${C.ink}"/>
+    <text x="176" y="126" fill="${C.faint}">centre</text>
+    <line x1="200" y1="105" x2="200" y2="43" stroke="${C.ink}" stroke-width="1.5"/>
+    <text x="146" y="100" fill="${C.ink}">string</text>
+    <line x1="193" y1="79" x2="207" y2="65" stroke="${C.w}" stroke-width="2.5"/>
+    <line x1="193" y1="65" x2="207" y2="79" stroke="${C.w}" stroke-width="2.5"/>
+    <text x="214" y="76" fill="${C.w}">breaks here</text>
+    <circle cx="200" cy="43" r="8" fill="${C.ink}"/>
+    <line x1="212" y1="43" x2="286" y2="43" stroke="${C.f}" stroke-width="2.5"/>
+    <polygon points="294,43 283,38 283,48" fill="${C.f}"/>
+    <text x="244" y="34" fill="${C.f}">v</text>
+    <text x="60" y="182" fill="${C.faint}">seen from above · which path does the ball take now?</text>
+  </svg>`,
+
+  /* carrying a box along a corridor */
+  q6:`<svg viewBox="0 0 420 186" xmlns="http://www.w3.org/2000/svg">
+    <line x1="20" y1="152" x2="400" y2="152" stroke="${C.ink}" stroke-width="1.5"/>
+    <circle cx="150" cy="52" r="12" fill="#fff" stroke="${C.ink}" stroke-width="1.5"/>
+    <line x1="150" y1="64" x2="150" y2="112" stroke="${C.ink}" stroke-width="1.5"/>
+    <line x1="150" y1="112" x2="136" y2="152" stroke="${C.ink}" stroke-width="1.5"/>
+    <line x1="150" y1="112" x2="166" y2="152" stroke="${C.ink}" stroke-width="1.5"/>
+    <line x1="150" y1="78" x2="182" y2="78" stroke="${C.ink}" stroke-width="1.5"/>
+    <rect x="182" y="60" width="42" height="36" fill="#fff" stroke="${C.ink}" stroke-width="1.5"/>
+    <text x="228" y="82" fill="${C.faint}">12 kg</text>
+    <line x1="203" y1="60" x2="203" y2="26" stroke="${C.a}" stroke-width="2.5"/>
+    <polygon points="203,18 198,29 208,29" fill="${C.a}"/>
+    <text x="211" y="30" fill="${C.a}">carrying force</text>
+    <line x1="60" y1="172" x2="360" y2="172" stroke="${C.f}" stroke-width="2"/>
+    <polygon points="368,172 357,167 357,177" fill="${C.f}"/>
+    <text x="188" y="167" fill="${C.f}">s = 15 m</text>
+  </svg>`
+};
+
+/* ============================================================
+   3. THE QUESTIONS
+   One per topic of the course. Every wrong option is a named
+   misconception with its own explanation and video.
+   Video scripts are 80-100 words, which is 30-45 seconds when
+   spoken at a calm pace.
+   ============================================================ */
+const QUESTIONS = [
+{
+  id:"q1", topic:"Motion and v-t diagrams", sketch:SKETCH.q1,
+  text:"A tram travels along a straight line. Its velocity is −8.0 m/s and its acceleration is −2.0 m/s². What happens to the speed of the tram?",
+  given:"v = −8.0 m/s · a = −2.0 m/s²",
+  revise:"Look again at the difference between velocity and speed, and at what the sign of the acceleration really tells you.",
+  options:[
+    {k:"A", t:"The speed increases: the tram gets faster in the negative direction.", correct:true,
+     why:"Velocity and acceleration have the same sign, so the acceleration adds to the motion the tram already has. The tram moves backwards and gets faster doing it."},
+    {k:"B", t:"The speed decreases, because a negative acceleration always means braking.", vid:"q1b",
+     name:"Negative acceleration means braking",
+     script:"A minus sign in front of an acceleration does not mean slowing down. It only tells you the direction: the acceleration points in the negative direction. Whether an object speeds up or slows down depends on how velocity and acceleration compare. If they have the same sign, the object speeds up. If they have opposite signs, it slows down. Here both are negative, so they point the same way and the tram gets faster. Braking would need a positive acceleration against this negative velocity."},
+    {k:"C", t:"The speed stays constant, because the two negative signs cancel each other out.", vid:"q1c",
+     name:"Signs cancel out",
+     script:"Signs only cancel when you multiply or divide, not when you compare two different quantities. Velocity and acceleration are separate physical quantities measured in different units: metres per second and metres per second squared. You cannot cancel one against the other. A constant speed would require an acceleration of exactly zero. Here the acceleration is two metres per second squared, so after one second the velocity has changed from minus eight to minus ten. The speed has clearly changed."},
+    {k:"D", t:"The speed decreases to zero and then the tram moves in the opposite direction.", vid:"q1d",
+     name:"Expecting a turning point",
+     script:"A turning point happens only when the velocity passes through zero, and that needs an acceleration pointing against the motion. Think of a ball thrown upwards: the velocity is positive, the acceleration is negative, so the ball slows, stops and comes back. Our tram is different. Its velocity is already negative and the acceleration pushes it further in that same negative direction. The velocity moves away from zero, not towards it, so the tram never turns around."}
+  ]
+},
+{
+  id:"q2", topic:"Free fall and vertical throws", sketch:SKETCH.q2,
+  text:"A ball is thrown vertically upwards. At the highest point of its flight, what are its velocity and its acceleration?",
+  given:"upward throw · air resistance neglected · g = 9.81 m/s²",
+  revise:"Revise why acceleration during a throw is always g, no matter what the velocity is doing.",
+  options:[
+    {k:"A", t:"v = 0 m/s and a = 9.81 m/s², directed downwards.", correct:true,
+     why:"The ball is momentarily at rest, but gravity never switches off. The weight still acts downwards, so the acceleration is still g — which is exactly why the ball does not stay up there."},
+    {k:"B", t:"v = 0 m/s and a = 0 m/s², because the ball is not moving at that instant.", vid:"q2b",
+     name:"Zero velocity means zero acceleration",
+     script:"Velocity and acceleration are independent. Velocity tells you how fast the position changes. Acceleration tells you how fast the velocity changes. At the highest point the velocity is zero for one instant, but it is still changing: a moment earlier it was upwards, a moment later it is downwards. That change is the acceleration, and it is nine point eight one metres per second squared. If the acceleration really were zero, the ball would stop in mid-air and stay there."},
+    {k:"C", t:"v = 0 m/s and a points upwards, otherwise the ball could not have risen at all.", vid:"q2c",
+     name:"Motion needs a force in its own direction",
+     script:"This is the old idea that a moving object carries a force with it. It does not. The hand gave the ball a velocity, not a supply of upward force. Once the ball has left the hand, the only force acting on it is its weight, and the weight always points downwards. The ball rises because it already has upward velocity, while gravity is busy reducing that velocity. No upward force is needed at any point of the flight."},
+    {k:"D", t:"v = 0 m/s and a is smaller than 9.81 m/s², because the ball has almost stopped.", vid:"q2d",
+     name:"Acceleration depends on speed",
+     script:"The acceleration in free fall does not depend on how fast the object is moving. It comes from Newton's second law: the acceleration equals the resultant force divided by the mass. The only force here is the weight, which is mass times g, so the mass cancels and the acceleration is g at every single point of the flight. Going up, at the top, coming down: always nine point eight one metres per second squared downwards. Speed simply does not enter the calculation."}
+  ]
+},
+{
+  id:"q3", topic:"Statics and contact forces", sketch:SKETCH.q3,
+  text:"A block of mass 5.0 kg lies at rest on a ramp inclined at 30° to the horizontal. How large is the normal force on the block?",
+  given:"m = 5.0 kg · α = 30° · g = 9.81 m/s² · F_G = 49.1 N",
+  revise:"Practise splitting the weight into a component perpendicular to the surface and one along it.",
+  options:[
+    {k:"A", t:"42.5 N", correct:true,
+     why:"The normal force balances only the part of the weight that presses into the surface: F_N = F_G · cos 30° = 49.1 N · 0.866 = 42.5 N."},
+    {k:"B", t:"49.1 N", vid:"q3b",
+     name:"The normal force always equals the weight",
+     script:"On a horizontal table the normal force does equal the weight, so it is tempting to make that a rule. It is not. The normal force is always perpendicular to the surface, and on a ramp that direction is tilted. Only the component of the weight pressing into the ramp has to be balanced. The other component pulls the block down the slope and is held by friction instead. So the normal force is the weight times the cosine of the angle: forty two point five newtons."},
+    {k:"C", t:"24.5 N", vid:"q3c",
+     name:"Sine and cosine swapped",
+     script:"Twenty four point five newtons is the weight times the sine of thirty degrees. That is the correct size of a real force, but it is the wrong one: it is the component along the slope, the part that tries to make the block slide. The perpendicular component uses the cosine. A quick check: as the ramp gets flatter, the angle goes to zero, and the normal force must approach the full weight. Cosine of zero is one, sine of zero is zero, so cosine is the one you need."},
+    {k:"D", t:"56.6 N", vid:"q3d",
+     name:"Dividing instead of multiplying",
+     script:"Fifty six point six newtons is the weight divided by the cosine of thirty. Dividing has made the normal force larger than the weight itself, and that should immediately look wrong: the block cannot press into the ramp harder than gravity pulls it down. When you split a vector into components, each component is always smaller than or equal to the original vector, so you multiply by cosine or sine, you never divide. Use the size of your answer as a check."}
+  ]
+},
+{
+  id:"q4", topic:"Dynamics and Newton's second law", sketch:SKETCH.q4,
+  text:"A lorry drives at a constant speed of 60 km/h along a straight, flat road. The engine provides a driving force of 2400 N. What is the resultant force on the lorry?",
+  given:"v = 60 km/h = constant · F_drive = 2400 N",
+  revise:"Go back to F_res = m · a and ask what a is when the speed does not change.",
+  options:[
+    {k:"A", t:"0 N — the driving force and the resistance forces cancel exactly.", correct:true,
+     why:"Constant speed on a straight road means a = 0, and F_res = m · a, so the resultant force must be zero. The resistance forces therefore also add up to 2400 N."},
+    {k:"B", t:"2400 N in the direction of travel — without a resultant force the lorry would stop.", vid:"q4b",
+     name:"Motion requires a resultant force",
+     script:"This is the most common wrong idea in all of mechanics: that movement needs a force to keep it going. Newton's first law says the opposite. An object keeps its velocity unless a resultant force changes it. Force does not maintain motion, it changes motion. The lorry needs its engine only because friction and air resistance are pulling backwards. Cancel those and you need no engine force at all. The driving force is not the resultant force, it is one force among several."},
+    {k:"C", t:"It cannot be calculated, because the mass of the lorry is not given.", vid:"q4c",
+     name:"Believing you always need the mass",
+     script:"Newton's second law says the resultant force is mass times acceleration. Constant speed on a straight road means the velocity is not changing, so the acceleration is exactly zero. Anything multiplied by zero is zero, and that includes an unknown mass. The resultant force is zero newtons whether the lorry weighs three tonnes or thirty. Missing information is only a problem if the answer actually depends on it. Check the acceleration first, and sometimes the unknown quantity disappears."},
+    {k:"D", t:"2400 N backwards — the resistance forces must be larger to hold the speed steady.", vid:"q4d",
+     name:"Resistance must beat the drive",
+     script:"If the backwards forces really were larger than the driving force, the resultant force would point backwards and the lorry would slow down. That contradicts the constant speed we were given. Equilibrium does not mean one side wins, it means both sides are exactly equal. The resistance forces add up to two thousand four hundred newtons, the same as the driving force, and the two cancel. The lorry then keeps whatever velocity it already had, which is precisely what the question describes."}
+  ]
+},
+{
+  id:"q5", topic:"Uniform circular motion", sketch:SKETCH.q5,
+  text:"A ball is swung on a string in a horizontal circle at constant speed. The string suddenly breaks. Seen from above, which path does the ball follow immediately afterwards?",
+  given:"constant speed · seen from above · no air resistance",
+  revise:"Revise why the centripetal force points inwards, and what is left when it disappears.",
+  options:[
+    {k:"A", t:"It flies off in a straight line, along the tangent to the circle.", correct:true,
+     why:"With the string gone there is no resultant force left in the horizontal plane, so by Newton's first law the ball keeps the velocity it had at that instant — and that velocity was tangential."},
+    {k:"B", t:"It flies straight outwards, away from the centre, pushed by the centrifugal force.", vid:"q5b",
+     name:"The centrifugal force",
+     script:"There is no outward force on the ball. The only horizontal force was the string pulling inwards, and that is the centripetal force. What you feel as an outward push when you swing something is your hand resisting the inward pull. The ball never had an outward force, so when the string breaks there is nothing to send it outwards. Its velocity at that moment points along the tangent, and that is the direction it takes. Watch a hammer thrower: the hammer leaves sideways, not radially."},
+    {k:"C", t:"It keeps curving for a short time and then gradually straightens out.", vid:"q5c",
+     name:"Curved motion carries on by itself",
+     script:"An object does not store the shape of its path. Curving requires a resultant force pointing towards the centre at every instant, supplied here by the string. The moment the string breaks that force is gone, and it is gone completely, not gradually. From that instant on the resultant horizontal force is zero and the motion is a straight line. There is no fading memory of the circle. The change from curve to straight line is immediate, not something that happens over the next half second."},
+    {k:"D", t:"It moves outwards along a spiral path.", vid:"q5d",
+     name:"The spiral path",
+     script:"A spiral would mean the ball is still turning while also moving away from the centre, and turning always needs a force towards the centre. After the string breaks there is no such force, so no turning can happen. The distance from the centre does grow, which is probably what makes a spiral feel right, but it grows along a straight line, not a curve. Draw the tangent and follow it: the ball gets further from the centre while travelling perfectly straight."}
+  ]
+},
+{
+  id:"q6", topic:"Work, energy and power", sketch:SKETCH.q6,
+  text:"A student carries a box of mass 12 kg at constant speed along a horizontal corridor, a distance of 15 m. How much work does the carrying force do on the box?",
+  given:"m = 12 kg · s = 15 m horizontal · constant speed · g = 9.81 m/s²",
+  revise:"Revise the types of work from the energy table and check which direction the force and the displacement point in.",
+  options:[
+    {k:"A", t:"0 J", correct:true,
+     why:"The carrying force points upwards while the displacement is horizontal. A force does work only along its own direction, so this force does no work at all. No energy form of the box changes: the height stays the same and so does the speed."},
+    {k:"B", t:"1766 J", vid:"q6b",
+     name:"Treating distance as height",
+     script:"One thousand seven hundred and sixty six joules is mass times g times fifteen metres. That is the formula for lifting work, and the fifteen metres in it must be a height. Here the fifteen metres is measured horizontally, so the box is never lifted. Its potential energy depends only on height, and the height does not change by a single centimetre. Lifting work applies when a body goes up or down. When it travels sideways, this formula simply does not fit the situation."},
+    {k:"C", t:"180 J", vid:"q6c",
+     name:"Forgetting g in the weight",
+     script:"One hundred and eighty joules is twelve times fifteen: mass times distance. Mass is not a force, so this product is not work at all. Check the units. Work is measured in joules, and a joule is a newton times a metre. Kilograms times metres gives you neither. To turn a mass into a force you must multiply by g. Doing a quick unit check on every answer catches this kind of error before it costs you marks in the exam."},
+    {k:"D", t:"It depends on how fast the student walks.", vid:"q6d",
+     name:"Confusing work with power",
+     script:"Time matters for power, not for work. Work is force times displacement, and neither of those contains time. Power is work divided by time, so walking faster does change the power. But the work stays the same: carrying the box quickly or slowly along the same corridor does exactly the same amount of work on it, which here is zero. Whenever a question mentions speed or duration, check whether it is really asking about work or about power."}
+  ]
+}
+];
+
+/* ============================================================
+   4. APPLICATION LOGIC
+   ============================================================ */
+const el = id => document.getElementById(id);
+let current = 0;
+let results = [];   // true = correct, false = wrong
+
+/* --- build the tick marks of the progress rail --- */
+(function buildRail(){
+  const g = el("railTicks");
+  QUESTIONS.forEach((q,i)=>{
+    const x = 10 + (i+1) * (550/6);
+    g.insertAdjacentHTML("beforeend",
+      `<line class="tick" x1="${x}" y1="18" x2="${x}" y2="30"/>
+       <circle class="dot" id="dot${i}" cx="${x}" cy="24" r="5"/>
+       <text class="lbl" x="${x}" y="44" text-anchor="middle">${i+1}</text>`);
+  });
+})();
+
+function updateRail(){
+  const x = 10 + results.length * (550/6);
+  el("railShaft").setAttribute("x2", x);
+  el("railHead").setAttribute("transform", `translate(${x},24)`);
+  results.forEach((ok,i)=>{
+    el("dot"+i).classList.add(ok ? "ok" : "no");
+  });
+}
+
+function renderQuestion(){
+  const q = QUESTIONS[current];
+  el("qTopic").textContent = q.topic;
+  el("qCount").textContent = `${current+1} / ${QUESTIONS.length}`;
+  el("qSketch").innerHTML = q.sketch;
+  el("qText").textContent = q.text;
+  el("qGiven").textContent = q.given;
+  el("feedback").hidden = true;
+
+  const list = el("qOptions");
+  list.innerHTML = "";
+  q.options.forEach((o,i)=>{
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.type = "button";
+    b.innerHTML = `<span class="key">${o.k}</span><span>${o.t}</span>`;
+    b.addEventListener("click", ()=>answer(i));
+    li.appendChild(b);
+    list.appendChild(li);
+  });
+  el("qText").focus?.();
+}
+
+function answer(i){
+  const q = QUESTIONS[current];
+  const chosen = q.options[i];
+  const ok = !!chosen.correct;
+  results.push(ok);
+
+  /* lock the options and colour them */
+  [...el("qOptions").querySelectorAll(".opt")].forEach((b,j)=>{
+    b.disabled = true;
+    if(q.options[j].correct) b.classList.add("correct");
+    else if(j === i) b.classList.add("chosen-wrong");
+    else b.classList.add("dim");
+  });
+
+  const fb = el("feedback");
+  fb.hidden = false;
+  fb.className = "fb " + (ok ? "ok" : "no");
+  el("fbMark").textContent = ok ? "Correct" : "Not correct";
+
+  if(ok){
+    el("fbName").textContent = "";
+    el("fbText").textContent = chosen.why;
+    el("fbVideo").innerHTML = "";
+  }else{
+    el("fbName").textContent = "Misconception: " + chosen.name;
+    el("fbText").textContent = "Here is why that reasoning breaks down.";
+    el("fbVideo").innerHTML = videoBlock(chosen);
+  }
+
+  el("nextBtn").textContent =
+    (current === QUESTIONS.length - 1) ? "See my result" : "Continue";
+  updateRail();
+  fb.scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+
+/* Builds the player for one wrong answer. The written explanation is
+   always shown underneath, so the clip works as a transcript too and the
+   page still teaches if a video fails to load. */
+function videoBlock(o){
+  return `<div class="frame">
+      <video controls preload="none"
+             poster="${POSTER_DIR}/${o.vid}.jpg"
+             title="Explanation: ${o.name}"
+             onerror="this.closest('.video').querySelector('.pending').hidden=false;this.closest('.frame').hidden=true;">
+        <source src="${VIDEO_DIR}/${o.vid}.mp4" type="video/mp4">
+        Your browser cannot play this video. The explanation is written out below.
+      </video>
+    </div>
+    <div class="pending" hidden><span class="badge">VIDEO UNAVAILABLE</span>
+      <span>the written explanation is below</span></div>
+    <div class="transcript"><strong>${o.name}.</strong> ${o.script}</div>`;
+}
+
+function showResult(){
+  el("quizScreen").hidden = true;
+  el("resultScreen").hidden = false;
+  const score = results.filter(Boolean).length;
+  el("scoreNum").textContent = score;
+
+  const msg = {
+    6:"Every question right. You are not just recalling formulas, you are reading the situations correctly — which is exactly what the exam asks for.",
+    5:"Strong result. One misconception is still hiding somewhere; the topic below is worth half an hour of your time.",
+    4:"A solid base. Two ideas need sharpening, and both are quick to fix once you see where the reasoning slipped.",
+    3:"Half right. The physics is there, but a few habits are pulling you towards the wrong answer. Work through the topics below one at a time.",
+    2:"There is real work to do here, and that is useful to know now rather than in the exam. Start with the first topic on the list.",
+    1:"Most of these caught you out, which usually means one or two core ideas are missing rather than six separate ones. Watch every explanation.",
+    0:"Nothing right this time — but every explanation you just read is a mark you can win back. Go through them, then run the quiz again."
+  }[score];
+  el("scoreMsg").textContent = msg;
+
+  const list = el("breakdown");
+  list.innerHTML = "";
+  QUESTIONS.forEach((q,i)=>{
+    const ok = results[i];
+    list.insertAdjacentHTML("beforeend",
+      `<li><span class="st ${ok?'ok':'no'}">${ok?'CORRECT':'REVISE'}</span>
+       <span class="tp">${q.topic}
+       ${ok ? "" : `<span class="hint">${q.revise}</span>`}</span></li>`);
+  });
+  el("resultScreen").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+/* --- navigation --- */
+el("startBtn").addEventListener("click", ()=>{
+  el("startScreen").hidden = true;
+  el("quizScreen").hidden = false;
+  el("rail").hidden = false;
+  renderQuestion();
+});
+
+el("nextBtn").addEventListener("click", ()=>{
+  if(current === QUESTIONS.length - 1){ showResult(); }
+  else { current++; renderQuestion(); el("quizScreen").scrollIntoView({behavior:"smooth", block:"start"}); }
+});
+
+el("againBtn").addEventListener("click", ()=>{
+  current = 0; results = [];
+  el("railShaft").setAttribute("x2", 10);
+  el("railHead").setAttribute("transform","translate(10,24)");
+  QUESTIONS.forEach((q,i)=> el("dot"+i).classList.remove("ok","no"));
+  el("resultScreen").hidden = true;
+  el("quizScreen").hidden = false;
+  renderQuestion();
+  el("masthead").scrollIntoView({behavior:"smooth", block:"start"});
+});
+
+/* "Read all explanations" prints every misconception on one page,
+   so the quiz can also be used as a revision sheet. */
+el("reviewBtn").addEventListener("click", ()=>{
+  const box = el("resultScreen");
+  if(box.querySelector("#allExp")){ box.querySelector("#allExp").remove(); return; }
+  let html = `<div id="allExp" style="margin-top:32px;border-top:2px solid var(--ink);padding-top:24px">
+    <h3 style="margin-bottom:16px">All eighteen misconceptions</h3>`;
+  QUESTIONS.forEach(q=>{
+    html += `<p class="eyebrow" style="margin:22px 0 8px">${q.topic}</p>`;
+    q.options.filter(o=>!o.correct).forEach(o=>{
+      html += `<div class="transcript" style="margin-bottom:12px">
+        <strong>${o.name}.</strong> ${o.script}</div>`;
+    });
+  });
+  html += `</div>`;
+  box.insertAdjacentHTML("beforeend", html);
+});
+</script>
+</body>
+</html>
